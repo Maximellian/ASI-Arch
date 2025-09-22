@@ -1,95 +1,79 @@
 import logging
-import os
 from typing import List, Optional
-
-import requests
-
+from sentence_transformers import SentenceTransformer
+import threading
+import torch
 
 class EmbeddingService:
-    """Embedding service client for calling remote API to compute text vectors."""
-    
-    def __init__(self, api_key: Optional[str] = None):
+    """Embedding service client for computing text vectors locally using 'all-roberta-large-v1' with MPS (Apple GPU) support."""
+
+    _model_lock = threading.Lock()
+    _model = None
+    _device = None
+
+    def __init__(self):
         """
-        Initialize embedding service.
-        
-        Args:
-            api_key: API key, if not provided, will read from ARK_API_KEY environment variable
+        Initialize embedding service to use Apple Silicon GPU (MPS) if available, otherwise fallback to CPU.
         """
-        self.api_key = api_key or os.getenv('ARK_API_KEY')
-        if not self.api_key:
-            raise ValueError("Please set ARK_API_KEY environment variable or provide api_key parameter")
-        
-        self.base_url = "https://ark.cn-beijing.volces.com/api/v3/embeddings"
-        self.model = "doubao-embedding-large-text-240915"
+        # Device auto-selection: use MPS if available, else CPU
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
+        EmbeddingService._device = self.device
+
         self.logger = logging.getLogger(__name__)
-        
+        # Thread-safe singleton model load
+        with EmbeddingService._model_lock:
+            if EmbeddingService._model is None:
+                EmbeddingService._model = SentenceTransformer("sentence-transformers/all-roberta-large-v1", device=self.device)
+                self.logger.info(f"Loaded 'all-roberta-large-v1' model on device '{self.device}'")
+
     def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
         Get embedding vectors for texts.
-        
+
         Args:
             texts: List of texts to compute embeddings for
-            
+
         Returns:
             List[List[float]]: List of embedding vectors corresponding to each text
         """
         if not texts:
             return []
-            
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        
-        data = {
-            "encoding_format": "float",
-            "input": texts,
-            "model": self.model
-        }
-        
         try:
-            response = requests.post(self.base_url, headers=headers, json=data, timeout=30)
-            response.raise_for_status()
-            
-            result = response.json()
-            
-            # Extract embedding data
-            embeddings = []
-            for item in sorted(result['data'], key=lambda x: x['index']):
-                embeddings.append(item['embedding'])
-            
-            self.logger.info(f"Successfully obtained embeddings for {len(embeddings)} texts")
-            return embeddings
-            
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Failed to request embedding API: {e}")
-            raise
-        except KeyError as e:
-            self.logger.error(f"Failed to parse embedding API response: {e}")
-            raise
+            embeddings = EmbeddingService._model.encode(
+                texts,
+                batch_size=16,  # 1024d model is larger, so batch_size lowered for stability
+                convert_to_numpy=True,
+                show_progress_bar=False,
+                device=EmbeddingService._device  # Always MPS or fallback device
+            )
+            embeddings_list = [emb.tolist() for emb in embeddings]
+            self.logger.info(f"Successfully obtained embeddings for {len(embeddings_list)} texts on device '{EmbeddingService._device}'")
+            return embeddings_list
         except Exception as e:
-            self.logger.error(f"Failed to get embeddings: {e}")
+            self.logger.error(f"Failed to compute embeddings: {e}")
             raise
-    
+
     def get_single_embedding(self, text: str) -> List[float]:
         """
         Get embedding vector for single text.
-        
+
         Args:
             text: Text to compute embedding for
-            
+
         Returns:
             List[float]: Embedding vector of the text
         """
         embeddings = self.get_embeddings([text])
         return embeddings[0] if embeddings else []
-    
 
 # Global embedding service instance
 _embedding_service = None
 
 def get_embedding_service() -> EmbeddingService:
-    """Get global embedding service instance."""
+    """Get global embedding service instance, always using MPS if available."""
     global _embedding_service
     if _embedding_service is None:
         _embedding_service = EmbeddingService()

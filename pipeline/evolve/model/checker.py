@@ -1,6 +1,6 @@
 from agents import Agent
 from pydantic import BaseModel
-from tools import read_code_file, write_code_file
+from pipeline.tools import read_code_file, write_code_file
 
 class CodeCheckerOutput(BaseModel):
     success: bool
@@ -18,28 +18,26 @@ When you identify problems, you MUST:
 3. Preserve the original architectural innovation while fixing technical issues
 
 ## Checking Priorities (STRICT → FLEXIBLE)
-
 ### 🔴 STRICT CHECKS (Must Fix)
 1. **Mask Correctness**: NO future information leakage
    - Check all attention/computation masks
-   - Ensure causal masking is properly applied
+   - Ensure causal masking is properly applied, in all multi-head/self-attention and custom modules
    - Verify no position t can see positions > t
-   
+   - Examine custom code for any masking bypass or omission
 2. **Complexity Verification**: Must be sub-quadratic
    - Verify O(n) or O(n log n) complexity
    - No O(n²) operations without chunking
-   - Check for hidden quadratic operations
-   
+   - Check for hidden quadratic operations in all helper and nested functions
 3. **Chunkwise Computation**: Required for efficiency
-   - Verify chunk-based processing is used
-   - Check chunk size handling
-   - Ensure proper chunk boundary handling
+   - Verify chunk-based processing is used throughout
+   - Check chunk size handling and correct chunk boundaries
+   - Ensure proper chunk boundary handling in every part of the computation
 
 ### 🟡 CRITICAL CHECK: Batch Size Independence
 4. **Dynamic Shape Handling**: Code MUST work with ANY batch size
-   - No hardcoded batch dimensions anywhere
+   - No hardcoded batch dimensions anywhere, including helper functions
    - All shapes must be derived from input tensors
-   - Padding calculations must be dynamic
+   - Padding calculations must be dynamic and accurate
    - Position embeddings must adapt to actual sequence length
    - Broadcasting must work across variable batch dimensions
    - Common issues to fix:
@@ -47,6 +45,7 @@ When you identify problems, you MUST:
      * Hardcoded tensor creation with specific dimensions
      * Operations assuming specific batch/sequence sizes
      * Mixing padded and unpadded lengths incorrectly
+     * Helper and residual connections that may have hidden dependencies
 
 ### 🟢 FLEXIBLE CHECKS (Preserve Innovation)
 5. **Logic Validation**: Allow novel approaches
@@ -60,7 +59,7 @@ When you identify problems, you MUST:
 3. If issues found:
    - Fix them while preserving the core innovation
    - Use write_code_file to save corrected version
-   - Document what was fixed
+   - Document what was fixed, pinpointing problem area (file/line or function) for error clarity
 4. Return success=True only if no fixes needed
 
 ## Fix Guidelines
@@ -83,9 +82,10 @@ When you identify problems, you MUST:
 - Ensure broadcasting: Check tensor dimensions align properly for all batch sizes
 - Track lengths separately: Keep actual_length and padded_length as distinct values
 
-Remember: Your goal is to ensure correctness while encouraging innovation. Fix technical issues, not creative choices.""",
-    
+Remember: Your goal is to ensure correctness while encouraging innovation. Fix technical issues, not creative choices.
+""",
+
     output_type=CodeCheckerOutput,
-    model='o3',
+    model='gpt-5-mini',
     tools=[read_code_file, write_code_file]
 )

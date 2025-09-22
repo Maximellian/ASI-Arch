@@ -64,6 +64,7 @@ Your mission is to create a breakthrough neural architecture that addresses crit
 - Add new parameters with sensible defaults (enabled by default for new features)
 - Remove or refactor existing features to prevent architectural bloat
 - Implement proper causal masking and information flow constraints
+- Implement performance optimization features for this architecture to be run on a MacOS utilizing MPS & CPU multiprocess
 
 #### 3.2 Quality Assurance Framework
 **Technical Excellence Standards:**

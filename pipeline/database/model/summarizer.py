@@ -76,6 +76,6 @@ Your experience synthesis should enable the Planner to:
 - Avoid repeating unsuccessful approaches from previous iterations""",
     
     output_type=SummaryOutput,
-    model='gpt-4.1',
+    model='gpt-5-mini',
     tools=[]
 )

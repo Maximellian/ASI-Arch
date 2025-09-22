@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from config import Config
-from database.element import DataElement
+from pipeline.config import Config
+from pipeline.database.element import DataElement
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -331,7 +331,7 @@ class MongoDBAPIClient:
         
         params = {"motivation": motivation, "top_k": top_k}
         response = self._make_request("GET", "/elements/search-similar", params=params)
-        return [DataElement(**item) for item in response]
+        return [DataElement.from_dict(item) for item in response]
     
     def get_top_k_results(self, k: int) -> List[DataElement]:
         """

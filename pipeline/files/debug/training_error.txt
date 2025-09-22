@@ -1,0 +1,6 @@
+[Mon Sep 22 13:24:57 EDT 2025] Starting MPS-compatible training runner for: bash pipeline/train.sh delta_net_hrem
+2025-09-22 13:24:58,618 - INFO - MPS device detected - disabling torch.compile for compatibility
+2025-09-22 13:24:59,017 - INFO - Running experiment: bash pipeline/train.sh delta_net_hrem
+2025-09-22 13:24:59,017 - INFO - Appended 1 training metrics to loss.csv
+2025-09-22 13:24:59,017 - INFO - Appended 1 benchmark results to benchmark.csv
+[Mon Sep 22 13:24:59 EDT 2025] Experiment completed successfully.

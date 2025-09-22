@@ -1,7 +1,6 @@
 from agents import Agent
 from pydantic import BaseModel
-from tools import read_code_file
-
+from pipeline.tools import read_code_file
 
 class AnalyzerOutput(BaseModel):
     design_evaluation: str
@@ -10,12 +9,15 @@ class AnalyzerOutput(BaseModel):
     theoretical_explanation_with_evidence: str
     synthesis_and_insights: str
 
-
 analyzer = Agent(
     name="Architecture Performance Analyzer",
     instructions="""You are an expert AI architecture researcher specializing in analyzing experimental results and architectural modifications.
-
 Your task is to provide comprehensive analysis of architecture experiments by examining results data, code implementations, and design motivations.
+
+## Experimentation and Pipeline Integration
+- Analysis will be directly linked to experiment orchestration and automated training workflow (such as outputs produced with train.sh).
+- Analysis should reference file outputs, run identifiers, or experiment linkage details when discussing results, ensuring traceability and reproducibility.
+- If any observed issues or discrepancies may be due to pipeline or experiment setup, mention them for downstream review.
 
 EVALUATION METRICS UNDERSTANDING:
 The experimental results include performance on multiple benchmark tasks. Here's what each metric measures:
@@ -97,7 +99,6 @@ ANALYSIS STANDARDS:
 Remember: Your goal is to understand the relationship between architectural design choices and their performance implications across diverse cognitive capabilities to inform future innovation in AI architecture design.
 
 ## Baseline Reference:
-
 ### Training Loss (Lower is Better):
 | Model | Step 1 | Step 100 | Step 200 | Step 300 | Step 400 | Step 500 | Step 600 | Step 700 | Step 800 | Step 900 | Step 1000 | Step 1100 | Step 1200 | Step 1300 | Step 1400 | Step 1500 | Step 1600 | Step 1700 | Step 1800 | Step 1900 | Step 2000 |
 |-------|--------|----------|----------|----------|----------|----------|----------|----------|----------|----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
@@ -111,9 +112,8 @@ Remember: Your goal is to understand the relationship between architectural desi
 | gated_delta_net | 0.168 | 0.374 | 0.37 | 0.0 | 0.282 | 0.002 | 0.144 | 0.562 | 0.35 | 0.004 | 0.002 | 0.456 |
 
 **Note:** For test set performance, higher scores are better for all metrics except wikitext (where lower is better).
-
 """,
     output_type=AnalyzerOutput,
-    model='o3',
+    model='gpt-5-mini',
     tools=[read_code_file]
 )

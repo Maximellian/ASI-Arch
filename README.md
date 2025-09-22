@@ -117,6 +117,9 @@ The framework relies on Docker to run the Database and Cognition Base services i
     python rag_api.py
     ```
 
+
+--------KMC STOPPED HERE----------
+
 #### Running Architecture Discovery
 Once the backend services are running, you can start the main discovery pipeline.
 

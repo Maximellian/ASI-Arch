@@ -53,7 +53,7 @@ async def analyse(
 
     db = MongoDatabase()
     # Fetch reference elements from the database
-    ref_elements = db.getcontextualnodes(parent) if parent else {"directparent": None, "strongestsiblings": [], "grandparent": None}
+    ref_elements = db.get_contextual_nodes(parent) if parent else {"directparent": None, "strongestsiblings": [], "grandparent": None}
     result_content = f"""### Current Experiment Results: 
     **Training Progression**: {result_dict["train"]}
     **Evaluation Results**: {result_dict["test"]}

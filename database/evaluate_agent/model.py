@@ -54,6 +54,6 @@ model_judger = Agent(
 Remember: Your goal is to create meaningful differentiation between models, not to give everyone a "good" score.""",
     
     output_type=ModelJudgementOutput,  
-    model='gpt-4.1',
+    model='gpt-5-mini',
     tools=[],
 )

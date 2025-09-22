@@ -2,7 +2,7 @@ import subprocess
 from typing import Any, Dict
 
 from agents import function_tool
-from config import Config
+from pipeline.config import Config
 
 
 @function_tool
@@ -49,7 +49,7 @@ def write_code_file(content: str) -> Dict[str, Any]:
             f.write(content)
         return {
             'success': True,
-            'message': f'Successfully write'
+            'message': 'Successfully wrote content'
         }
     except Exception as e:
         return {
@@ -59,7 +59,8 @@ def write_code_file(content: str) -> Dict[str, Any]:
 
 
 @function_tool
-def run_training_script(name: str, script_path: str) -> Dict[str, Any]:
+def run_training_script(name: str) -> Dict[str, Any]:
+    script_path = Config.BASH_SCRIPT
     """Run the training script and return its output."""
     try:
         subprocess.run(['bash', script_path, name], 
@@ -68,7 +69,7 @@ def run_training_script(name: str, script_path: str) -> Dict[str, Any]:
                       check=True)
         return {
             'success': True,
-            'error': 'Training script executed successfully'
+            'message': 'Training script executed successfully'
         }
     except subprocess.CalledProcessError as e:
         return {

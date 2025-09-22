@@ -1,0 +1,48 @@
+[Sun Sep 21 12:02:18 EDT 2025] Starting batch training of all experiments
+Discovering available experiments...
+Found 6 experiments to run:
+delta_net_hhmr
+deltanet_baseline
+deltanet_mamba
+deltanet_attention
+deltanet_conv
+deltanet_hybrid
+Initialized batch summary at pipeline/files/analysis/batch_summary.csv
+
+[1/6] Running: delta_net_hhmr
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 16% (1/6) | Elapsed: 0s | ETA: 0s
+
+[2/6] Running: deltanet_baseline
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 33% (2/6) | Elapsed: 0s | ETA: 0s
+
+[3/6] Running: deltanet_mamba
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 50% (3/6) | Elapsed: 0s | ETA: 0s
+
+[4/6] Running: deltanet_attention
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 66% (4/6) | Elapsed: 0s | ETA: 0s
+
+[5/6] Running: deltanet_conv
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 83% (5/6) | Elapsed: 0s | ETA: 0s
+
+[6/6] Running: deltanet_hybrid
+----------------------------------------
+bash: train.sh: No such file or directory
+Progress: 100% (6/6) | Elapsed: 0s | ETA: 0s
+
+========================================
+Batch complete: 6 succeeded, 0 failed in 0s
+Generated files:
+ - pipeline/files/analysis/loss.csv
+ - pipeline/files/analysis/benchmark.csv
+ - pipeline/files/analysis/batch_summary.csv
+ - pipeline/files/debug/batch_training.log

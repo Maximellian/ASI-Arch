@@ -1,0 +1,7 @@
+experiment_name,status,duration_seconds,model_params,total_benchmarks,avg_forward_time_ms,avg_throughput,completion_time
+delta_net_hhmr,SUCCESS,0,1060424,3,2.319,942.293,2025-09-21T16:02:18Z
+deltanet_baseline,SUCCESS,0,,0,0,0,2025-09-21T16:02:18Z
+deltanet_mamba,SUCCESS,0,,0,0,0,2025-09-21T16:02:18Z
+deltanet_attention,SUCCESS,0,,0,0,0,2025-09-21T16:02:18Z
+deltanet_conv,SUCCESS,0,,0,0,0,2025-09-21T16:02:18Z
+deltanet_hybrid,SUCCESS,0,,0,0,0,2025-09-21T16:02:18Z

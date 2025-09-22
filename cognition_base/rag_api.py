@@ -4,6 +4,12 @@
 Web API Interface for RAG Service
 Provides HTTP REST API based on Flask.
 """
+# Monkey-patch missing functions in huggingface_hub for compatibility
+import huggingface_hub
+from huggingface_hub import snapshot_download, hf_hub_download
+
+huggingface_hub.cached_download = snapshot_download
+huggingface_hub.split_torch_state_dict_into_shards = lambda *args, **kwargs: hf_hub_download(*args, **kwargs)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
@@ -242,10 +248,10 @@ if __name__ == '__main__':
     # Initialize the RAG service before starting the Flask application
     success = init_rag_service()
     if not success:
-        print("❌ RAG service initialization failed, please check the logs")
+        print("‚ùå RAG service initialization failed, please check the logs")
         exit(1)
     
-    print("✅ RAG service initialized successfully")
+    print("‚úÖ RAG service initialized successfully")
     print("API Documentation: http://localhost:5000/")
     print("Health Check: http://localhost:5000/health")
     print("Statistics: http://localhost:5000/stats")

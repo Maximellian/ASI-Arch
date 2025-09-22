@@ -7,6 +7,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -19,16 +20,14 @@ print_warning() {
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
+
 # Check MongoDB Service Status
 check_mongodb() {
     print_info "Checking MongoDB service status..."
-    
-    cd /root/workspace/mongodb
     if ! docker-compose ps | grep -q "mongodb.*Up"; then
         print_warning "MongoDB service not running, starting..."
         docker-compose up -d
         sleep 10  # Wait for the containers to start
-        
         if docker-compose ps | grep -q "mongodb.*Up"; then
             print_success "MongoDB service started successfully"
         else
@@ -39,16 +38,14 @@ check_mongodb() {
     else
         print_success "MongoDB service is running"
     fi
-    cd ..
 }
+
 # Check Python Dependencies
 check_dependencies() {
     print_info "Checking Python dependencies..."
-    
     if ! python -c "import fastapi, uvicorn, pymongo, requests" 2>/dev/null; then
         print_warning "Missing Python dependencies, installing..."
         pip install -r requirements.txt
-        
         if python -c "import fastapi, uvicorn, pymongo, requests" 2>/dev/null; then
             print_success "Python dependencies installed successfully"
         else
@@ -59,30 +56,27 @@ check_dependencies() {
         print_success "Python dependencies are met"
     fi
 }
+
 # Start the API Service
 start_api() {
     print_info "Starting MongoDB API service..."
-    print_info "API Service Address: http://localhost:8001" # Corrected port number
-    print_info "API Documentation Address: http://localhost:8001/docs" # Corrected port number
+    print_info "API Service Address: http://localhost:8001"
+    print_info "API Documentation Address: http://localhost:8001/docs"
     print_info "Press Ctrl+C to stop the service"
-    
     echo ""
-    cd /root/workspace/mongodb_api
-    python mongodb_api.py
+    export MONGO_USER=Maximellian
+    export MONGO_PASSWORD=Youbicurti$1126
+    cd /Users/kevincurtis/asi-arch
+    PYTHONPATH=. python -m database.mongodb_api
 }
+
 # Main function
 main() {
     echo "MongoDB API Service Startup Script"
     echo "========================"
-    
-    # Check MongoDB service
     check_mongodb
-    
-    # Check Python dependencies
     check_dependencies
-    
-    # Start API service
     start_api
 }
-# Run the main function
+
 main "$@"

@@ -9,14 +9,14 @@ from agents import Runner
 class AgentLogger:
     """Agent call logger."""
     
-    def __init__(self, log_dir: str = "logs/agent_calls"):
+    def __init__(self, log_dir: str = "pipline/logs/agent_calls"):
         """
         Initialize logger.
         
         Args:
             log_dir: Log file storage directory
         """
-        self.log_dir = Path(log_dir)
+        self.log_dir = Path(log_dir).resolve()
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         # Create main log file
@@ -335,19 +335,28 @@ class AgentLogger:
         """
         if current_depth > max_depth:
             return "<max_depth_reached>"
-            
         if data is None:
             return None
         elif isinstance(data, (str, int, float, bool)):
             return data
         elif isinstance(data, (list, tuple)):
             return [self._serialize_data(item, max_depth, current_depth + 1) for item in data[:10]]  # Limit list length
-        elif isinstance(data, dict):
-            return {k: self._serialize_data(v, max_depth, current_depth + 1) for k, v in list(data.items())[:20]}  # Limit dictionary size
+        # --- ROBUST FIX ---
+        elif isinstance(data, dict) or hasattr(data, 'items'):
+            try:
+                # objects with .items() method
+                items = list(data.items())[:20]
+            except Exception:
+                items = []
+            return {k: self._serialize_data(v, max_depth, current_depth + 1) for k, v in items}
+        elif hasattr(data, "__dict__"):
+            items = list(vars(data).items())[:20]
+            return {k: self._serialize_data(v, max_depth, current_depth + 1) for k, v in items}
         else:
-            # Try to handle various special object types
             return self._serialize_object(data, max_depth, current_depth)
-    
+
+        
+            
     def _serialize_object(self, data: Any, max_depth: int, current_depth: int) -> Any:
         """Serialize complex objects."""
         try:
@@ -621,7 +630,7 @@ def get_logger(log_dir: str = "logs/agent_calls") -> AgentLogger:
     """Get global logger instance."""
     global _global_logger
     if _global_logger is None:
-        _global_logger = AgentLogger(log_dir)
+        _global_logger = AgentLogger("pipeline/logs/agent_calls")
     return _global_logger
 
 async def log_agent_run(agent_name: str, agent, input_data: Any = None, **kwargs) -> Any:

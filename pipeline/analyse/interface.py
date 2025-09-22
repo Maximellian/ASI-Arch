@@ -3,16 +3,15 @@ import io
 import re
 from datetime import datetime
 from typing import Optional, Any
-
 from agents import exceptions
-from config import Config
-from database import DataElement
-from database.mongo_database import create_client
-from tools.tools import run_rag
-from utils.agent_logger import log_agent_run
+from pipeline.config import Config
+from database.util import DataElement
+from database.mongodb_database import MongoDatabase
+db = MongoDatabase
+from pipeline.tools.tools import run_rag
+from pipeline.utils.agent_logger import log_agent_run
 from .model import analyzer
 from .prompts import Analyzer_input
-
 
 def extract_original_name(timestamped_name: str) -> str:
     """Extract original name from timestamped name."""
@@ -20,7 +19,6 @@ def extract_original_name(timestamped_name: str) -> str:
     timestamp_pattern = r'^\d{8}-\d{2}:\d{2}:\d{2}-'
     original_name = re.sub(timestamp_pattern, '', timestamped_name)
     return original_name
-
 
 async def analyse(
     name: str,
@@ -52,9 +50,10 @@ async def analyse(
     # Use timestamped name for lookup, but replace with original name
     increment(result_dict, name, original_name, 'train')
     increment(result_dict, name, original_name, 'test')
-    
-    db = create_client()
-    ref_elements = db.get_analyse_elements(parent)
+
+    db = MongoDatabase()
+    # Fetch reference elements from the database
+    ref_elements = db.getcontextualnodes(parent) if parent else {"directparent": None, "strongestsiblings": [], "grandparent": None}
     result_content = f"""### Current Experiment Results: 
     **Training Progression**: {result_dict["train"]}
     **Evaluation Results**: {result_dict["test"]}
@@ -65,8 +64,10 @@ async def analyse(
     # Get paper content
     paper_query = analysis.experimental_results_analysis
     paper_result = run_rag(paper_query)
-    
-    paper_content = paper_result['results']  # Further refine content in subsequent processing
+    if paper_result.get('success') and 'results' in paper_result:
+        paper_content = paper_result['results']
+    else:
+        paper_content = paper_result.get('error', 'RAG query failed or no results')
     content_str = str(paper_content)
     analysis_result = (
         analysis.design_evaluation + 
@@ -84,12 +85,11 @@ async def analyse(
         motivation=motivation,
         analysis=analysis_result,
         cognition=content_str,
-        log="",
+        log=None,
         parent=parent
     )
     
     return result
-
 
 def _read_program_file(file_path: str) -> str:
     """Read program file content with error handling."""
@@ -100,7 +100,6 @@ def _read_program_file(file_path: str) -> str:
         return f"Error: Program file '{file_path}' not found"
     except Exception as e:
         return f"Error reading program file: {str(e)}"
-
 
 def _read_csv_file(file_path: str) -> str:
     """Read CSV file content with error handling."""
@@ -115,7 +114,6 @@ def _read_csv_file(file_path: str) -> str:
         return f"Error: Result file '{file_path}' not found"
     except Exception as e:
         return f"Error reading result file: {str(e)}"
-
 
 def increment(result: dict, timestamped_name: str, original_name: str, key: str) -> None:
     """Extract corresponding timestamped_name row from CSV, but replace with original_name."""
@@ -145,7 +143,6 @@ def increment(result: dict, timestamped_name: str, original_name: str, key: str)
     except StopIteration:
         pass
 
-
 async def run_analyzer(
     name: str, 
     result_content: str, 
@@ -154,13 +151,12 @@ async def run_analyzer(
 ) -> Optional[Any]:
     """Run analyzer with retry mechanism."""
     ref_context = _build_reference_context(ref_elements)
-
     for attempt in range(Config.MAX_RETRY_ATTEMPTS):
         try:
             analyzer_result = await log_agent_run(
                 "analyzer",
                 analyzer,
-                Analyzer_input(name, result_content, motivation, ref_context)
+                Analyzer_input(name, result_content, motivation, ref_context),
             )
             return analyzer_result.final_output
             
@@ -171,7 +167,6 @@ async def run_analyzer(
     
     return None
 
-
 def _build_reference_context(ref_elements: dict) -> str:
     """Build reference context string from reference elements."""
     ref_context = "# Reference Experiments\n"
@@ -180,20 +175,17 @@ def _build_reference_context(ref_elements: dict) -> str:
         ref_context += "### Direct Parent\n"
         ref_context += _ref_elements_context(DataElement(**ref_elements["direct_parent"]))
         ref_context += "\n\n"
-
     if ref_elements.get("strongest_siblings"):
         ref_context += "### Strongest Siblings\n"
         for sibling in ref_elements["strongest_siblings"]:
             ref_context += _ref_elements_context(DataElement(**sibling))
         ref_context += "\n\n"
-
     if ref_elements.get("grandparent"):
         ref_context += "### Grandparent\n"
         ref_context += _ref_elements_context(DataElement(**ref_elements["grandparent"]))
         ref_context += "\n\n"
     
     return ref_context
-
 
 def _ref_elements_context(ref_element: DataElement) -> str:
     """Generate context string for a reference element."""
@@ -205,9 +197,8 @@ def _ref_elements_context(ref_element: DataElement) -> str:
 **Evaluation Results**: {ref_element.result["test"]}
 """
 
-
 def save(name: str) -> None:
-    """Save source file content to code pool with given name."""
+    """Save source file content to code pool (pipeline/pool) with given name."""
     with open(Config.SOURCE_FILE, "r", encoding='utf-8') as f:
         content = f.read()
     with open(f"{Config.CODE_POOL}/{name}.py", "w", encoding='utf-8') as f:

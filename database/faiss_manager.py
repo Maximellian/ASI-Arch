@@ -12,9 +12,9 @@ class FAISSManager:
     """FAISS vector index manager for efficient vector similarity search."""
     
     def __init__(self, 
-                 dimension: int = 4096,
-                 index_file: str = "faiss_index.bin",
-                 metadata_file: str = "faiss_metadata.pkl",
+                 dimension: int = 1024, #change from 4096 (using API to external llm to 1024 for self-hosted sentence-transformers/all-roberta-large-v1 
+                 index_file: str = "faiss_index_1024d.bin",
+                 metadata_file: str = "faiss_metadata_1024d.pkl",
                  index_type: str = "IP"):  # IP for Inner Product (cosine similarity)
         """
         Initialize FAISS manager.
